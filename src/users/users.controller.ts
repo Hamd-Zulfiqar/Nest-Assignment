@@ -9,14 +9,17 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { Request } from "express";
+import { ApiTags, ApiHeader, ApiOkResponse, ApiNotFoundResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiInternalServerErrorResponse } from '@nestjs/swagger';
 
 @Controller('users')
+@ApiTags('Users')
 @UsePipes(new ValidationPipe())
 @UseFilters(HttpExceptionFilter)
 export class UsersController {
   constructor(private readonly userService: UsersService, private jwtService: JwtService){}
 
   @Get()
+  @ApiOkResponse({description: "Users Retrieved!"})
   @UseInterceptors(ResponseInterceptor)
   async findAll(@Param('page') page) {
     if(page)
@@ -25,14 +28,8 @@ export class UsersController {
     return {statusCode: 200, message: "Users Retrieved!", data: users};
   }
 
-  @Get('feed')
-  @UseGuards(AuthGuard('jwt'))
-  @UseInterceptors(ResponseInterceptor)
-  async getFeed(@Req() red: Request){
-
-  }
-
   @Get('profile')
+  @ApiOkResponse({description: "User Profile Retrieved!"})
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(ResponseInterceptor)
   async findProfile(@Req() req: Request) {
@@ -41,6 +38,8 @@ export class UsersController {
   }
 
   @Get(':id')
+  @ApiOkResponse({description: "User Retrieved!"})
+  @ApiNotFoundResponse({description: "User not found!"})
   @UseInterceptors(ResponseInterceptor)
   async findOne(@Param('id') id) {
     const user = await this.userService.getOne(id);
@@ -48,6 +47,9 @@ export class UsersController {
   }
 
   @Post('signup')
+  @ApiBadRequestResponse({description: "Email Already Exists!"})
+  @ApiCreatedResponse({description: "User Created!"})
+  @ApiInternalServerErrorResponse({description: "Server Error!"})
   @UseInterceptors(ResponseInterceptor)
   async createUser(@Body() user: CreateUserDTO) {
     Logger.log("Adding a new User!");
@@ -56,6 +58,12 @@ export class UsersController {
   }
 
   @Post('follow/:id')
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer Token',
+  })
+  @ApiOkResponse({description: "User Followed"})
+  @ApiNotFoundResponse({description: "User not found!"})
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(ResponseInterceptor)
   async followUser(@Param('id') id, @Req() req: Request){
@@ -64,6 +72,12 @@ export class UsersController {
   }
 
   @Post('unfollow/:id')
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer Token',
+  })
+  @ApiOkResponse({description: "User Unfollowed!"})
+  @ApiNotFoundResponse({description: "User not found!"})
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(ResponseInterceptor)
   async unfollowUser(@Param('id') id, @Req() req: Request){
@@ -72,6 +86,9 @@ export class UsersController {
   }
 
   @Post('login')
+  @ApiBadRequestResponse({description: "Invalid Credentials"})
+  @ApiOkResponse({description: "User Logged In!"})
+  @ApiInternalServerErrorResponse({description: "Server Error!"})
   @UseInterceptors(ResponseInterceptor)
   async loginUser(@Body() user: LoginUserDTO) {
     Logger.log("Loggin in a User!");
@@ -84,6 +101,11 @@ export class UsersController {
   }
 
   @Put(':id')
+  @ApiHeader({
+    name: 'Authorization',
+    description: 'Bearer Token',
+  })
+  @ApiOkResponse({description: "User Updated!"})
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(ResponseInterceptor)
   async updateUser(@Param('id') id, @Body() user: UpdateUserDTO){
@@ -93,6 +115,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @ApiOkResponse({description: "User Deleted!"})
   @UseInterceptors(ResponseInterceptor)
   async deleteUser(@Param('id') id){
     Logger.log(`Deleting User with id: ${id}!`);

@@ -8,8 +8,14 @@ import { UpdatePostDTO } from './dto/update-post.dto';
 import { Request } from 'express';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiHeader, ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger';
 
 @Controller('posts')
+@ApiTags('Posts')
+@ApiHeader({
+  name: 'Authorization',
+  description: 'Bearer Token',
+})
 @UseGuards(AuthGuard('jwt'))
 @UsePipes(new ValidationPipe())
 @UseFilters(HttpExceptionFilter)
@@ -18,6 +24,7 @@ export class PostsController {
   constructor(private readonly postService: PostsService, private readonly userService: UsersService){}
 
   @Get()
+  @ApiOkResponse({description: "Posts Retrieved!"})
   @UseInterceptors(ResponseInterceptor)
   async findAll( @Req() req: Request) {
     const user = await this.userService.getDocument(req.user["userId"]);
@@ -26,16 +33,19 @@ export class PostsController {
   }
 
   @Get('feed')
+  @ApiOkResponse({description: "Feed Generated!"})
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(ResponseInterceptor)
-  async getFeed(@Req() req: Request){
+  async getFeed(@Param('sort') sort, @Req() req: Request){
     const postIds = await this.userService.getPosts(req.user["userId"]);
-    const feed = await this.postService.getFeed(postIds);
+    const feed = await this.postService.getFeed(postIds, sort);
     console.log(feed);
     return {status: 200, message: "Feed generated!", data: feed};
   }
 
   @Get(':id')
+  @ApiOkResponse({description: "Post Retrieved!"})
+  @ApiNotFoundResponse({description: "Post not found!"})
   @UseInterceptors(ResponseInterceptor)
   async findOne(@Param('id') id) {
     const post = await this.postService.getOne(id);
@@ -43,6 +53,7 @@ export class PostsController {
   }
 
   @Post()
+  @ApiOkResponse({description: "Posts Created!"})
   @UseInterceptors(ResponseInterceptor)
   async createPost(@Body() post: CreatePostDTO, @Req() req: Request) {
     Logger.log("Adding a new Post!");
@@ -53,6 +64,7 @@ export class PostsController {
   }
 
   @Put(':id')
+  @ApiOkResponse({description: "Post Updated!"})
   @UseInterceptors(ResponseInterceptor)
   async updatePost(@Param('id') id, @Body() post: UpdatePostDTO){
     Logger.log(`Updating Post with id: ${id}!`);
@@ -61,6 +73,7 @@ export class PostsController {
   }
 
   @Delete(':id')
+  @ApiOkResponse({description: "Posts Deleted!"})
   @UseInterceptors(ResponseInterceptor)
   async deletePost(@Param('id') id, @Req() req: Request){
     Logger.log(`Deleting Post with id: ${id}!`);
