@@ -7,9 +7,10 @@ import { PostsController } from './posts/posts.controller';
 import { PostsService } from './posts/posts.service';
 import { PostsModule } from './posts/posts.module';
 import config from '../config/keys'
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [UsersModule, MongooseModule.forRoot(config.mongoURL), PostsModule],
+  imports: [ConfigModule.forRoot({isGlobal: true}),UsersModule, MongooseModule.forRoot(config.mongoURL), PostsModule],
   controllers: [AppController,],
   providers: [AppService,],
 })
