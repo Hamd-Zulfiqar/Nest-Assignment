@@ -39,12 +39,13 @@ export class UsersService {
       }
     }
     
-    async getAll(): Promise<User[]> {
-      return await this.UserModel.find();
+    async getAll(page: number = 1): Promise<User[]> {
+
+      return await this.UserModel.find().limit(10).skip((page - 1) * 10);
     }
 
     async getOne(id: string): Promise<User> {
-      const user = await this.UserModel.findOne({ _id: id});
+      const user = await this.UserModel.findOne({ _id: id}).populate("posts").populate("following");
 
       if(!user)
         Error.http404("User Not found!");
@@ -62,6 +63,50 @@ export class UsersService {
     }
 
     async addPost(userId: string, postId: string) {
-      await this.UserModel.updateOne({ _id: userId}, {$push: { posts: postId}});
+      await this.UserModel.updateOne({ _id: userId}, { $push: { posts: postId}});
     }
+
+    async removePost(userId: string, postId: string) {
+      await this.UserModel.updateOne({ _id: userId}, { $pull: {posts: postId}});
+    }
+
+    async getDocument(id: string): Promise<UserDocument> {
+      const user = await this.UserModel.findOne({ _id: id});
+
+      if(!user)
+        Error.http404("User Not found!");
+      
+      return user;
+    }
+
+    async followUser(currentUser: string, id: string) {
+      const user = await this.UserModel.findOne({_id: id});
+
+      if(user)
+        await this.UserModel.updateOne({_id: currentUser}, { $push: {following: id}});
+      else
+        Error.http404("User Not found!");
+    }
+
+    async unfollowUser(currentUser: string, id: string) {
+      const user = await this.UserModel.findOne({_id: id});
+
+      if(user)
+        await this.UserModel.updateOne({_id: currentUser}, { $pull: {following: id}});
+      else
+        Error.http404("User Not found!");
+    }
+
+    async getPosts(id: string) {
+      const user = await this.UserModel.findOne({ _id: id}).populate("following");
+      let feed = [];
+
+      const followings = user.following;
+
+      followings.forEach(user => {
+        feed = feed.concat(user.posts);
+      })
+      return feed;
+    }
+
 }

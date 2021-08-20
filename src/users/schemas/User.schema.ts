@@ -6,7 +6,7 @@ import { Post } from 'src/posts/schemas/Post.schema';
 
 export type UserDocument = User & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
   @Prop({required: true})
   firstName: string;
@@ -22,6 +22,9 @@ export class User {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }] })
   posts: Post[];
+
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] })
+  following: User[]
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

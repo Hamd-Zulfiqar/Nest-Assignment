@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 export type PostDocument = Post & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Post {
   @Prop({required: true})
   title: string;

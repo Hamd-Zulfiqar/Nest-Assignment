@@ -19,9 +19,20 @@ export class PostsController {
 
   @Get()
   @UseInterceptors(ResponseInterceptor)
-  async findAll() {
-    const posts = await this.postService.getAll();
+  async findAll( @Req() req: Request) {
+    const user = await this.userService.getDocument(req.user["userId"]);
+    const posts = await this.postService.getAll(user);
     return {statusCode: 200, message: "Posts Retrieved!", data: posts};
+  }
+
+  @Get('feed')
+  @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(ResponseInterceptor)
+  async getFeed(@Req() req: Request){
+    const postIds = await this.userService.getPosts(req.user["userId"]);
+    const feed = await this.postService.getFeed(postIds);
+    console.log(feed);
+    return {status: 200, message: "Feed generated!", data: feed};
   }
 
   @Get(':id')
@@ -38,7 +49,7 @@ export class PostsController {
     const createdPost = await this.postService.create(post);
     
     await this.userService.addPost(req.user["userId"],createdPost._id);
-    return {statusCode: 200, message: "Post Created!", data: createdPost};
+    return {statusCode: 201, message: "Post Created!", data: createdPost};
   }
 
   @Put(':id')
@@ -51,9 +62,11 @@ export class PostsController {
 
   @Delete(':id')
   @UseInterceptors(ResponseInterceptor)
-  async deletePost(@Param('id') id){
+  async deletePost(@Param('id') id, @Req() req: Request){
     Logger.log(`Deleting Post with id: ${id}!`);
     const deletedPost = await this.postService.delete(id);
+    
+    await this.userService.removePost(req.user["userId"], deletedPost._id);
     return {statusCode: 200, message: "Post Deleted!", data: deletedPost};
   }
 }

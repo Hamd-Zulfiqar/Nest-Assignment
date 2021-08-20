@@ -3,7 +3,7 @@ import { HttpException, HttpStatus } from "@nestjs/common";
 export const http400 = (message: string) => {
     throw new HttpException({
         message,
-        status: HttpStatus.BAD_REQUEST
+        status: HttpStatus.BAD_REQUEST,
     }, HttpStatus.BAD_REQUEST);
 }
 
